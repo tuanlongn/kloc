@@ -1,10 +1,30 @@
 {
-  "name": "k-loc",
-  "description": "A CLI tool to count K-LOC (lines of code) of a Git repository",
+  "name": "git-kloc-analyzer",
+  "version": "1.1.0",
+  "description": "A powerful TypeScript tool for analyzing KLOC (Kilo Lines of Code) statistics from Git repositories with email-based contributor grouping",
+  "main": "dist/kloc.js",
+  "bin": {
+    "git-kloc": "dist/kloc.js"
+  },
   "scripts": {
     "build": "tsc",
-    "start": "ts-node src/kloc.ts"
+    "start": "ts-node src/kloc.ts",
+    "dev": "ts-node --watch src/kloc.ts",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "test": "echo \"Tests coming soon\" && exit 0"
   },
+  "keywords": [
+    "git",
+    "kloc",
+    "lines-of-code",
+    "statistics",
+    "analysis",
+    "typescript",
+    "cli"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
     "@types/node": "^24.0.4",
     "commander": "^14.0.0"

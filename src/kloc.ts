@@ -55,6 +55,7 @@ class GitKlocAnalyzer {
         cwd: this.repoPath,
         encoding: "utf-8",
         stdio: ["pipe", "pipe", "pipe"],
+        maxBuffer: 1024 * 1024 * 50, // 50MB buffer for large repositories
       });
       return result.toString().trim();
     } catch (error) {
@@ -379,8 +380,8 @@ async function main() {
     )
     .version("1.1.0")
     .requiredOption("-r, --repo <path>", "Path to the Git repository")
-    .requiredOption("-f, --from <date>", "Start date (YYYY-MM-DD)")
-    .requiredOption("-t, --to <date>", "End date (YYYY-MM-DD)")
+    .option("-f, --from <date>", "Start date (YYYY-MM-DD), defaults to repository start")
+    .option("-t, --to <date>", "End date (YYYY-MM-DD), defaults to current date")
     .option("-o, --output <file>", "Save results to CSV file")
     .option("--no-progress", "Disable progress output")
     .parse();
@@ -390,10 +391,14 @@ async function main() {
   try {
     const startTime = Date.now();
     
+    // Set default dates if not provided
+    const fromDate = options.from || '1970-01-01'; // Unix epoch start
+    const toDate = options.to || new Date().toISOString().split('T')[0]; // Today's date
+    
     const analyzer = new GitKlocAnalyzer(
       options.repo,
-      options.from,
-      options.to
+      fromDate,
+      toDate
     );
     const stats = await analyzer.analyze();
 
