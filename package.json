@@ -1,0 +1,16 @@
+{
+  "name": "k-loc",
+  "description": "A CLI tool to count K-LOC (lines of code) of a Git repository",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/kloc.ts"
+  },
+  "dependencies": {
+    "@types/node": "^24.0.4",
+    "commander": "^14.0.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
