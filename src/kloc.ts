@@ -8,7 +8,7 @@ import * as path from "path";
 /**
  * Statistics for a single contributor
  */
-interface ContributorStats {
+export interface ContributorStats {
   author: string;
   email: string;
   linesAdded: number;
@@ -32,7 +32,7 @@ interface CommitInfo {
 /**
  * Analyzer for calculating KLOC (Kilo Lines of Code) statistics from Git repositories
  */
-class GitKlocAnalyzer {
+export class GitKlocAnalyzer {
   private repoPath: string;
   private fromDate: string;
   private toDate: string;
@@ -463,5 +463,3 @@ async function main() {
 if (require.main === module) {
   main();
 }
-
-export { GitKlocAnalyzer, ContributorStats };

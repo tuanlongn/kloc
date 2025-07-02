@@ -109,6 +109,35 @@ yarn start -r /path/to/your/repository
 | `-h, --help` | Display help information | ❌ | - |
 | `-V, --version` | Display version number | ❌ | - |
 
+## Testing
+
+The project includes comprehensive unit tests focusing on the core KLOC calculation logic.
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+### Test Coverage
+
+The unit tests cover:
+- ✅ **KLOC Calculation Logic**: Core formula and rounding
+- ✅ **Net Lines Calculation**: Added - Deleted lines
+- ✅ **Input Validation**: Date formats and repository paths
+- ✅ **Edge Cases**: Zero values, large numbers, negative results
+- ✅ **Integration**: Mocked Git command processing
+- ✅ **Error Handling**: Invalid inputs and repository validation
+
+For detailed test documentation, see [TEST.md](TEST.md).
+
 ## Output Format
 
 The tool provides a comprehensive report including:
@@ -231,7 +260,7 @@ yarn dev                # Development mode with ts-node
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for details
 
 ## Changelog
 
