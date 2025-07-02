@@ -1,6 +1,6 @@
 {
   "name": "git-kloc-analyzer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A powerful TypeScript tool for analyzing KLOC (Kilo Lines of Code) statistics from Git repositories with email-based contributor grouping",
   "main": "dist/kloc.js",
   "bin": {
