@@ -59,7 +59,8 @@ class GitKlocAnalyzer {
       });
       return result.toString().trim();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`Git command failed: ${command}\nError: ${errorMessage}`);
     }
   }
@@ -81,13 +82,19 @@ class GitKlocAnalyzer {
 
   private validateDateRange(): void {
     if (!this.validateDateFormat(this.fromDate)) {
-      throw new Error(`Invalid from date format: ${this.fromDate}. Expected YYYY-MM-DD`);
+      throw new Error(
+        `Invalid from date format: ${this.fromDate}. Expected YYYY-MM-DD`
+      );
     }
     if (!this.validateDateFormat(this.toDate)) {
-      throw new Error(`Invalid to date format: ${this.toDate}. Expected YYYY-MM-DD`);
+      throw new Error(
+        `Invalid to date format: ${this.toDate}. Expected YYYY-MM-DD`
+      );
     }
     if (new Date(this.fromDate) > new Date(this.toDate)) {
-      throw new Error(`From date (${this.fromDate}) must be before to date (${this.toDate})`);
+      throw new Error(
+        `From date (${this.fromDate}) must be before to date (${this.toDate})`
+      );
     }
   }
 
@@ -99,31 +106,37 @@ class GitKlocAnalyzer {
       return [];
     }
 
-    return output.split("\n").map((line) => {
-      const parts = line.split("|");
-      if (parts.length < 5) {
-        console.warn(`Warning: Invalid commit line format: ${line}`);
-        return null;
-      }
-      const [hash, author, email, date, subject] = parts;
-      return { hash, author, email, date, subject };
-    }).filter((commit): commit is CommitInfo => commit !== null);
+    return output
+      .split("\n")
+      .map((line) => {
+        const parts = line.split("|");
+        if (parts.length < 5) {
+          console.warn(`Warning: Invalid commit line format: ${line}`);
+          return null;
+        }
+        const [hash, author, email, date, subject] = parts;
+        return { hash, author, email, date, subject };
+      })
+      .filter((commit): commit is CommitInfo => commit !== null);
   }
 
-  private getAllCommitStatsOptimized(): Map<string, { added: number; deleted: number }> {
+  private getAllCommitStatsOptimized(): Map<
+    string,
+    { added: number; deleted: number }
+  > {
     try {
       const statsCommand = `git log --since="${this.fromDate}" --until="${this.toDate}" --numstat --pretty=format:"%H"`;
       const output = this.executeGitCommand(statsCommand);
-      
+
       const commitStats = new Map<string, { added: number; deleted: number }>();
-      
+
       if (!output) {
         return commitStats;
       }
-      
+
       const lines = output.split("\n");
       let currentCommit = "";
-      
+
       for (const line of lines) {
         if (line.match(/^[a-f0-9]{40}$/)) {
           // This is a commit hash
@@ -141,10 +154,12 @@ class GitKlocAnalyzer {
           }
         }
       }
-      
+
       return commitStats;
     } catch (error) {
-      console.warn(`Warning: Could not get optimized stats, falling back to individual commits`);
+      console.warn(
+        `Warning: Could not get optimized stats, falling back to individual commits`
+      );
       return new Map();
     }
   }
@@ -192,13 +207,15 @@ class GitKlocAnalyzer {
     const useOptimized = allCommitStats.size > 0;
 
     if (useOptimized) {
-      console.log('Using optimized stats collection...');
+      console.log("Using optimized stats collection...");
     }
 
     commits.forEach((commit, index) => {
       if (index % Math.max(1, Math.floor(commits.length / 10)) === 0) {
         const percentage = Math.round((index / commits.length) * 100);
-        console.log(`Progress: ${percentage}% (${index + 1}/${commits.length} commits)`);
+        console.log(
+          `Progress: ${percentage}% (${index + 1}/${commits.length} commits)`
+        );
       }
 
       const authorKey = commit.email;
@@ -216,9 +233,9 @@ class GitKlocAnalyzer {
       }
 
       const stats = authorStats.get(authorKey)!;
-      
+
       // Use optimized stats if available, otherwise fall back to individual commit stats
-      const commitStats = useOptimized 
+      const commitStats = useOptimized
         ? allCommitStats.get(commit.hash) || { added: 0, deleted: 0 }
         : this.getCommitStats(commit.hash);
 
@@ -258,7 +275,7 @@ class GitKlocAnalyzer {
       (a, b) => b.kloc - a.kloc
     );
 
-    console.log('\nAnalysis completed successfully!');
+    console.log("\nAnalysis completed successfully!");
     return results;
   }
 }
@@ -279,53 +296,78 @@ function displayResults(stats: ContributorStats[]): void {
     return;
   }
 
+  // Calculate dynamic column widths based on content
+  // Email width needs to account for rank prefix (#01, #02, etc.) + space + email
+  const maxEmailLength = Math.max(...stats.map(s => s.email.length));
+  const rankWidth = stats.length.toString().length + 1; // +1 for the # symbol
+  const emailWidth = Math.max(30, maxEmailLength + rankWidth + 3); // +3 for space and padding
+  const addedWidth = Math.max(12, Math.max(...stats.map(s => formatNumber(s.linesAdded).length)) + 2);
+  const deletedWidth = Math.max(12, Math.max(...stats.map(s => formatNumber(s.linesDeleted).length)) + 2);
+  const netWidth = Math.max(12, Math.max(...stats.map(s => formatNumber(s.netLines).length)) + 2);
+  const commitsWidth = Math.max(10, Math.max(...stats.map(s => formatNumber(s.commits).length)) + 2);
+  const klocWidth = 10;
+
   // Create the table border
-  const borderLine = "+" + "-".repeat(17) + "+" + "-".repeat(14) + "+" + "-".repeat(15) + "+" + "-".repeat(13) + "+" + "-".repeat(15) + "+" + "-".repeat(15) + "+";
-  
+  const borderLine = 
+    "+" + "-".repeat(emailWidth) + 
+    "+" + "-".repeat(klocWidth) + 
+    "+" + "-".repeat(addedWidth) + 
+    "+" + "-".repeat(deletedWidth) + 
+    "+" + "-".repeat(netWidth) + 
+    "+" + "-".repeat(commitsWidth) + "+";
+
+  console.log("\n" + "=".repeat(borderLine.length));
+  console.log("GIT KLOC STATISTICS REPORT".padStart((borderLine.length + 27) / 2));
+  console.log("=".repeat(borderLine.length));
+  console.log();
+
   console.log(borderLine);
   console.log(
-    `| ${"author".padEnd(15)}| ${"added lines".padEnd(12)}| ${"removed lines".padEnd(13)}| ${"total lines".padEnd(11)}| ${"total commits".padEnd(13)}|`
+    `| ${"Email".padEnd(emailWidth - 2)} | ${"KLOC".padStart(klocWidth - 2)} | ${"Added".padStart(addedWidth - 2)} | ${"Deleted".padStart(deletedWidth - 2)} | ${"Net".padStart(netWidth - 2)} | ${"Commits".padStart(commitsWidth - 2)} |`
   );
   console.log(borderLine);
 
   let totalAdded = 0;
   let totalDeleted = 0;
   let totalCommits = 0;
+  let totalKloc = 0;
 
-  stats.forEach((stat) => {
+  stats.forEach((stat, index) => {
+    const rank = `#${(index + 1).toString().padStart(stats.length.toString().length, '0')}`;
+    const emailDisplay = `${rank} ${stat.email}`;
+    
     console.log(
-      `| ${stat.email.padEnd(15)}| ${formatNumber(stat.linesAdded).padStart(12)}| ${formatNumber(stat.linesDeleted).padStart(13)}| ${formatNumber(stat.netLines).padStart(11)}| ${formatNumber(stat.commits).padStart(13)}|`
+      `| ${emailDisplay.padEnd(emailWidth - 2)} | ${stat.kloc.toFixed(2).padStart(klocWidth - 2)} | ${formatNumber(stat.linesAdded).padStart(addedWidth - 2)} | ${formatNumber(stat.linesDeleted).padStart(deletedWidth - 2)} | ${formatNumber(stat.netLines).padStart(netWidth - 2)} | ${formatNumber(stat.commits).padStart(commitsWidth - 2)} |`
     );
 
     totalAdded += stat.linesAdded;
     totalDeleted += stat.linesDeleted;
     totalCommits += stat.commits;
+    totalKloc += stat.kloc;
   });
 
   console.log(borderLine);
   console.log(
-    `| ${"ALL".padEnd(15)}| ${formatNumber(totalAdded).padStart(12)}| ${formatNumber(totalDeleted).padStart(13)}| ${formatNumber(totalAdded - totalDeleted).padStart(11)}| ${formatNumber(totalCommits).padStart(13)}|`
+    `| ${"TOTAL".padEnd(emailWidth - 2)} | ${totalKloc.toFixed(2).padStart(klocWidth - 2)} | ${formatNumber(totalAdded).padStart(addedWidth - 2)} | ${formatNumber(totalDeleted).padStart(deletedWidth - 2)} | ${formatNumber(totalAdded - totalDeleted).padStart(netWidth - 2)} | ${formatNumber(totalCommits).padStart(commitsWidth - 2)} |`
   );
   console.log(borderLine);
   
-  // Generate filename with current date
-  const now = new Date();
-  const dateStr = now.getFullYear().toString() + 
-                  (now.getMonth() + 1).toString().padStart(2, '0') + 
-                  now.getDate().toString().padStart(2, '0') + 
-                  now.getHours().toString().padStart(2, '0') + 
-                  now.getMinutes().toString().padStart(2, '0') + 
-                  now.getSeconds().toString().padStart(2, '0');
-  const filename = `kloc_${dateStr}.csv`;
-  
-  console.log(`\nFile ${filename} has been created`);
+  // Summary statistics
+  console.log();
+  console.log("Summary:");
+  console.log(`- Total contributors: ${stats.length}`);
+  console.log(`- Average KLOC per contributor: ${(totalKloc / stats.length).toFixed(2)}`);
+  console.log(`- Average commits per contributor: ${(totalCommits / stats.length).toFixed(1)}`);
+  if (stats.length > 0) {
+    console.log(`- Top contributor: ${stats[0].email} (${stats[0].kloc.toFixed(2)} KLOC)`);
+  }
 }
 
 /**
  * Escapes CSV field content to handle quotes and commas properly
  */
 function escapeCsvField(field: string): string {
-  if (field.includes('"') || field.includes(',') || field.includes('\n')) {
+  if (field.includes('"') || field.includes(",") || field.includes("\n")) {
     return `"${field.replace(/"/g, '""')}"`;
   }
   return field;
@@ -338,23 +380,28 @@ function saveToFile(stats: ContributorStats[]): string {
   try {
     // Generate filename with current date
     const now = new Date();
-    const dateStr = now.getFullYear().toString() + 
-                    (now.getMonth() + 1).toString().padStart(2, '0') + 
-                    now.getDate().toString().padStart(2, '0') + 
-                    now.getHours().toString().padStart(2, '0') + 
-                    now.getMinutes().toString().padStart(2, '0') + 
-                    now.getSeconds().toString().padStart(2, '0');
+    const dateStr =
+      now.getFullYear().toString() +
+      (now.getMonth() + 1).toString().padStart(2, "0") +
+      now.getDate().toString().padStart(2, "0") +
+      now.getHours().toString().padStart(2, "0") +
+      now.getMinutes().toString().padStart(2, "0") +
+      now.getSeconds().toString().padStart(2, "0");
     const filename = `kloc_${dateStr}.csv`;
-    
+
     const csvContent = [
       "Author,Email,KLOC,Lines Added,Lines Deleted,Net Lines,Commits",
       ...stats.map(
         (stat) =>
-          `${escapeCsvField(stat.author)},${escapeCsvField(stat.email)},${stat.kloc},${stat.linesAdded},${stat.linesDeleted},${stat.netLines},${stat.commits}`
+          `${escapeCsvField(stat.author)},${escapeCsvField(stat.email)},${
+            stat.kloc
+          },${stat.linesAdded},${stat.linesDeleted},${stat.netLines},${
+            stat.commits
+          }`
       ),
     ].join("\n");
 
-    fs.writeFileSync(filename, csvContent, 'utf-8');
+    fs.writeFileSync(filename, csvContent, "utf-8");
     return filename;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -370,14 +417,20 @@ async function main() {
   const program = new Command();
 
   program
-    .name("git-kloc-stats")
+    .name("git-kloc-analyzer")
     .description(
       "Analyze KLOC (Kilo Lines of Code) statistics for Git contributors"
     )
     .version("1.1.0")
     .requiredOption("-r, --repo <path>", "Path to the Git repository")
-    .option("-f, --from <date>", "Start date (YYYY-MM-DD), defaults to repository start")
-    .option("-t, --to <date>", "End date (YYYY-MM-DD), defaults to current date")
+    .option(
+      "-f, --from <date>",
+      "Start date (YYYY-MM-DD), defaults to repository start"
+    )
+    .option(
+      "-t, --to <date>",
+      "End date (YYYY-MM-DD), defaults to current date"
+    )
     .option("-o, --output <file>", "Save results to CSV file")
     .option("--no-progress", "Disable progress output")
     .parse();
@@ -388,21 +441,18 @@ async function main() {
     const startTime = Date.now();
     
     // Set default dates if not provided
-    const fromDate = options.from || '1970-01-01'; // Unix epoch start
-    const toDate = options.to || new Date().toISOString().split('T')[0]; // Today's date
-    
-    const analyzer = new GitKlocAnalyzer(
-      options.repo,
-      fromDate,
-      toDate
-    );
+    const fromDate = options.from || "1970-01-01"; // Unix epoch start
+    const toDate = options.to || new Date().toISOString().split("T")[0]; // Today's date
+
+    const analyzer = new GitKlocAnalyzer(options.repo, fromDate, toDate);
     const stats = await analyzer.analyze();
 
     displayResults(stats);
 
     // Always save to CSV file
-    saveToFile(stats);
-    
+    const csvFilename = saveToFile(stats);
+    console.log(`\nTotal execution time: ${((Date.now() - startTime) / 1000).toFixed(2)} seconds`);
+    console.log(`CSV file saved: ${csvFilename}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Error:", errorMessage);
