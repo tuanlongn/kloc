@@ -235,17 +235,4 @@ MIT License - see LICENSE file for details
 
 ## Changelog
 
-### v1.1.0
-- ✨ Added email-based contributor grouping
-- 🚀 Improved performance for large repositories
-- 📊 Enhanced output formatting with rankings
-- 📁 Better CSV export with proper escaping
-- ⚡ Made date parameters optional
-- 🎯 Added progress tracking
-- 🛠️ Increased buffer size for large repositories
-
-### v1.0.0
-- 🎉 Initial release
-- 📊 Basic KLOC analysis
-- 📁 CSV export functionality
-- 📅 Date range filtering
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
