@@ -274,65 +274,51 @@ function formatNumber(num: number): string {
  * Displays the analysis results in a formatted table
  */
 function displayResults(stats: ContributorStats[]): void {
-  console.log("\n" + "=".repeat(95));
-  console.log("GIT KLOC STATISTICS REPORT");
-  console.log("=".repeat(95));
-
   if (stats.length === 0) {
     console.log("No contributors found in the specified date range.");
     return;
   }
 
+  // Create the table border
+  const borderLine = "+" + "-".repeat(17) + "+" + "-".repeat(14) + "+" + "-".repeat(15) + "+" + "-".repeat(13) + "+" + "-".repeat(15) + "+" + "-".repeat(15) + "+";
+  
+  console.log(borderLine);
   console.log(
-    `${"Email".padEnd(40)} ${"KLOC".padStart(
-      8
-    )} ${"Added".padStart(10)} ${"Deleted".padStart(10)} ${"Net".padStart(
-      10
-    )} ${"Commits".padStart(8)}`
+    `| ${"author".padEnd(15)}| ${"added lines".padEnd(12)}| ${"removed lines".padEnd(13)}| ${"total lines".padEnd(11)}| ${"total commits".padEnd(13)}|`
   );
-  console.log("-".repeat(95));
+  console.log(borderLine);
 
-  let totalKloc = 0;
   let totalAdded = 0;
   let totalDeleted = 0;
   let totalCommits = 0;
 
-  stats.forEach((stat, index) => {
-    const rank = `#${(index + 1).toString().padStart(2)}`;
+  stats.forEach((stat) => {
     console.log(
-      `${rank} ${stat.email.substring(0, 37).padEnd(37)} ` +
-        `${stat.kloc.toFixed(2).padStart(8)} ` +
-        `${formatNumber(stat.linesAdded).padStart(10)} ` +
-        `${formatNumber(stat.linesDeleted).padStart(10)} ` +
-        `${formatNumber(stat.netLines).padStart(10)} ` +
-        `${formatNumber(stat.commits).padStart(8)}`
+      `| ${stat.email.padEnd(15)}| ${formatNumber(stat.linesAdded).padStart(12)}| ${formatNumber(stat.linesDeleted).padStart(13)}| ${formatNumber(stat.netLines).padStart(11)}| ${formatNumber(stat.commits).padStart(13)}|`
     );
 
-    totalKloc += stat.kloc;
     totalAdded += stat.linesAdded;
     totalDeleted += stat.linesDeleted;
     totalCommits += stat.commits;
   });
 
-  console.log("-".repeat(95));
+  console.log(borderLine);
   console.log(
-    `${"TOTAL".padEnd(40)} ` +
-      `${totalKloc.toFixed(2).padStart(8)} ` +
-      `${formatNumber(totalAdded).padStart(10)} ` +
-      `${formatNumber(totalDeleted).padStart(10)} ` +
-      `${formatNumber(totalAdded - totalDeleted).padStart(10)} ` +
-      `${formatNumber(totalCommits).padStart(8)}`
+    `| ${"ALL".padEnd(15)}| ${formatNumber(totalAdded).padStart(12)}| ${formatNumber(totalDeleted).padStart(13)}| ${formatNumber(totalAdded - totalDeleted).padStart(11)}| ${formatNumber(totalCommits).padStart(13)}|`
   );
-  console.log("=".repeat(95));
+  console.log(borderLine);
   
-  // Display summary statistics
-  console.log(`\nSummary:`);
-  console.log(`- Total contributors: ${stats.length}`);
-  console.log(`- Average KLOC per contributor: ${(totalKloc / stats.length).toFixed(2)}`);
-  console.log(`- Average commits per contributor: ${(totalCommits / stats.length).toFixed(1)}`);
-  if (stats.length > 0) {
-    console.log(`- Top contributor: ${stats[0].author} (${stats[0].kloc.toFixed(2)} KLOC)`);
-  }
+  // Generate filename with current date
+  const now = new Date();
+  const dateStr = now.getFullYear().toString() + 
+                  (now.getMonth() + 1).toString().padStart(2, '0') + 
+                  now.getDate().toString().padStart(2, '0') + 
+                  now.getHours().toString().padStart(2, '0') + 
+                  now.getMinutes().toString().padStart(2, '0') + 
+                  now.getSeconds().toString().padStart(2, '0');
+  const filename = `kloc_${dateStr}.csv`;
+  
+  console.log(`\nFile ${filename} has been created`);
 }
 
 /**
@@ -348,8 +334,18 @@ function escapeCsvField(field: string): string {
 /**
  * Saves contributor statistics to a CSV file
  */
-function saveToFile(stats: ContributorStats[], filename: string): void {
+function saveToFile(stats: ContributorStats[]): string {
   try {
+    // Generate filename with current date
+    const now = new Date();
+    const dateStr = now.getFullYear().toString() + 
+                    (now.getMonth() + 1).toString().padStart(2, '0') + 
+                    now.getDate().toString().padStart(2, '0') + 
+                    now.getHours().toString().padStart(2, '0') + 
+                    now.getMinutes().toString().padStart(2, '0') + 
+                    now.getSeconds().toString().padStart(2, '0');
+    const filename = `kloc_${dateStr}.csv`;
+    
     const csvContent = [
       "Author,Email,KLOC,Lines Added,Lines Deleted,Net Lines,Commits",
       ...stats.map(
@@ -359,7 +355,7 @@ function saveToFile(stats: ContributorStats[], filename: string): void {
     ].join("\n");
 
     fs.writeFileSync(filename, csvContent, 'utf-8');
-    console.log(`\nResults saved to: ${filename}`);
+    return filename;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`Error saving file: ${errorMessage}`);
@@ -404,12 +400,8 @@ async function main() {
 
     displayResults(stats);
 
-    if (options.output) {
-      saveToFile(stats, options.output);
-    }
-    
-    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`\nTotal execution time: ${duration} seconds`);
+    // Always save to CSV file
+    saveToFile(stats);
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
